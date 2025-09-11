@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { CartItem, Product, ProductVariant } from '../types';
 import { LOCAL_STORAGE_KEYS, getFromLocalStorage, setToLocalStorage } from '../utils/localStorage';
 
@@ -79,8 +79,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     return items.reduce((total, item) => total + (item.variant.price * item.quantity), 0);
   };
 
-  return (
-    <CartContext.Provider value={{
+  return React.createElement(
+    CartContext.Provider,
+    { value: {
       items,
       addToCart,
       removeFromCart,
@@ -88,9 +89,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       clearCart,
       getTotalItems,
       getTotalAmount
-    }}>
-      {children}
-    </CartContext.Provider>
+    }},
+    children
   );
 };
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, ArrowRight, Sparkles } from 'lucide-react';
+import { MapPin, ArrowRight, Sparkles, Apple, Carrot, Coffee, Salad, Beef, Fish, Sandwich, Banana } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import BannerSlider from '../components/common/BannerSlider';
 import LoyaltyProgressBar from '../components/common/LoyaltyProgressBar';
@@ -31,7 +31,7 @@ const HomePage: React.FC = () => {
     localStorage.setItem(LOCAL_STORAGE_KEYS.USER_PIN, JSON.stringify(pinCode));
   };
 
-  const freshTodayProducts = sampleProducts.slice(0, 4);
+  const freshTodayProducts = sampleProducts.slice(0, 12);
   const canUseLoyalty = user && user.loyaltyPoints >= 300;
 
   if (!selectedPin) {
@@ -52,7 +52,7 @@ const HomePage: React.FC = () => {
           isOpen={isPinSelectorOpen}
           onClose={() => setIsPinSelectorOpen(false)}
           onSelect={handlePinSelect}
-          selectedPin={selectedPin?.pin}
+          selectedPin={selectedPin !== null ? selectedPin.pin : undefined}
         />
       </div>
     );
@@ -107,44 +107,81 @@ const HomePage: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
           >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Shop by Category</h2>
-              <Link
-                to="/shop"
-                className="flex items-center space-x-1 text-green-600 hover:text-green-700 font-medium text-sm"
-              >
-                <span>View All</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+            <div className="mb-4">
+              <h2 className="text-xl font-medium text-gray-900">Categories</h2>
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {sampleCategories.slice(0, 10).map((category, index) => (
-                <motion.div
-                  key={category.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 + index * 0.1 }}
-                >
-                  <Link
-                    to={`/shop?category=${category.id}`}
-                    className="group block"
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {sampleCategories.slice(0, 8).map((category, index) => {
+                // Map category names to appropriate icons
+                let CategoryIcon;
+                let iconColor;
+                
+                switch(category.name.toLowerCase()) {
+                  case 'fresh fruits':
+                  case 'cut fruits':
+                    CategoryIcon = Apple;
+                    iconColor = 'text-red-500';
+                    break;
+                  case 'fresh vegetables':
+                    CategoryIcon = Carrot;
+                    iconColor = 'text-green-500';
+                    break;
+                  case 'curry cuts':
+                    CategoryIcon = Beef;
+                    iconColor = 'text-amber-700';
+                    break;
+                  case 'juice cuts':
+                    CategoryIcon = Coffee;
+                    iconColor = 'text-orange-500';
+                    break;
+                  case 'mezhukkupuratti cut':
+                  case 'thoran cut':
+                    CategoryIcon = Sandwich;
+                    iconColor = 'text-green-600';
+                    break;
+                  case 'peeled items':
+                    CategoryIcon = Banana;
+                    iconColor = 'text-yellow-500';
+                    break;
+                  case 'salads':
+                    CategoryIcon = Salad;
+                    iconColor = 'text-green-400';
+                    break;
+                  case 'grated items':
+                    CategoryIcon = Fish;
+                    iconColor = 'text-blue-500';
+                    break;
+                  default:
+                    CategoryIcon = Carrot;
+                    iconColor = 'text-green-500';
+                }
+                
+                return (
+                  <motion.div
+                    key={category.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 + index * 0.05 }}
                   >
-                    <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow group-hover:border-green-200">
-                      <div className="aspect-square bg-gray-50 rounded-xl mb-3 overflow-hidden">
-                        <img
-                          src={category.image}
-                          alt={category.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                        />
+                    <Link
+                      to={`/shop?category=${category.id}`}
+                      className="group block"
+                    >
+                      <div className="bg-white rounded-lg p-3 shadow-sm hover:shadow-md transition-all duration-200 border border-gray-100 hover:border-green-200 hover:scale-105">
+                        <div className="flex flex-col items-center">
+                          <div className="w-10 h-10 flex items-center justify-center mb-2 rounded-full bg-gray-50 group-hover:bg-green-50 transition-colors">
+                            <CategoryIcon className={`w-5 h-5 ${iconColor}`} />
+                          </div>
+                          <h3 className="text-xs font-medium text-gray-800 text-center group-hover:text-green-600 transition-colors truncate w-full">
+                            {category.name}
+                          </h3>
+                        </div>
                       </div>
-                      <h3 className="text-sm font-medium text-gray-900 text-center group-hover:text-green-600 transition-colors">
-                        {category.name}
-                      </h3>
-                    </div>
-                  </Link>
-                </motion.div>
-              ))}
+                    </Link>
+                  </motion.div>
+                );
+              })}
             </div>
           </motion.div>
         </div>
@@ -172,7 +209,7 @@ const HomePage: React.FC = () => {
               </Link>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
               {freshTodayProducts.map((product, index) => (
                 <motion.div
                   key={product.id}
@@ -214,7 +251,7 @@ const HomePage: React.FC = () => {
         isOpen={isPinSelectorOpen}
         onClose={() => setIsPinSelectorOpen(false)}
         onSelect={handlePinSelect}
-        selectedPin={selectedPin?.pin}
+        selectedPin={selectedPin !== null ? selectedPin.pin : undefined}
       />
     </div>
   );

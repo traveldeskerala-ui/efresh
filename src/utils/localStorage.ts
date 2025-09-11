@@ -3,7 +3,9 @@ export const LOCAL_STORAGE_KEYS = {
   CART: 'ecfresh_cart',
   USER: 'ecfresh_user',
   LOYALTY: 'ecfresh_loyalty',
-  LAST_TIME_SLOT: 'ecfresh_last_time_slot'
+  LAST_TIME_SLOT: 'ecfresh_last_time_slot',
+  WISHLIST: 'ecfresh_wishlist',
+  ORDERS: 'ecfresh_orders'
 } as const;
 
 export const getFromLocalStorage = <T>(key: string, defaultValue: T): T => {

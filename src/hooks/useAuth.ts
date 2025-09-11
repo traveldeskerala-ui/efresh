@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User } from '../types';
 import { LOCAL_STORAGE_KEYS, getFromLocalStorage, setToLocalStorage, removeFromLocalStorage } from '../utils/localStorage';
 
@@ -80,13 +80,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const updatedUser = { ...user, ...userData };
       setUser(updatedUser);
       setToLocalStorage(LOCAL_STORAGE_KEYS.USER, updatedUser);
+    } else {
+      // If no user exists, create a new one from provided data (useful for guest -> account flow)
+      const newUser: User = {
+        id: userData.id || `user-${Date.now()}`,
+        email: userData.email || `${(userData as any).phone || 'guest'}@guest.local`,
+        name: userData.name || 'Guest',
+        phone: (userData as any).phone || '',
+        pinCode: userData.pinCode || undefined,
+        loyaltyPoints: userData.loyaltyPoints ?? 0,
+        totalPurchases: userData.totalPurchases ?? 0,
+        addresses: (userData.addresses as any) || [],
+        isAdmin: userData.isAdmin ?? false
+      };
+      setUser(newUser);
+      setToLocalStorage(LOCAL_STORAGE_KEYS.USER, newUser);
     }
   };
 
-  return (
-    <AuthContext.Provider value={{ user, login, logout, updateUser, isLoading }}>
-      {children}
-    </AuthContext.Provider>
+  return React.createElement(
+    AuthContext.Provider,
+    { value: { user, login, logout, updateUser, isLoading } },
+    children
   );
 };
 

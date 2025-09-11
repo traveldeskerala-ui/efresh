@@ -10,6 +10,14 @@ import { LOCAL_STORAGE_KEYS, getFromLocalStorage } from '../utils/localStorage';
 import toast from 'react-hot-toast';
 
 const CheckoutPage: React.FC = () => {
+  // Guest checkout details
+  const [guestDetails, setGuestDetails] = useState({
+    name: '',
+    phone: '',
+    address: '',
+    landmark: '',
+    optionalPhone: ''
+  });
   const { items, getTotalAmount, clearCart } = useCart();
   const { user, updateUser } = useAuth();
   const navigate = useNavigate();
@@ -46,6 +54,24 @@ const CheckoutPage: React.FC = () => {
       toast.error('Please select delivery date and time slot');
       return;
     }
+    if (!user) {
+      if (!guestDetails.name.trim()) {
+        toast.error('Name is required');
+        return;
+      }
+      if (!guestDetails.phone.trim()) {
+        toast.error('Phone number is required');
+        return;
+      }
+      if (!guestDetails.address.trim()) {
+        toast.error('Address is required');
+        return;
+      }
+      if (!guestDetails.landmark.trim()) {
+        toast.error('Landmark is required');
+        return;
+      }
+    }
 
     setIsProcessing(true);
 
@@ -53,11 +79,38 @@ const CheckoutPage: React.FC = () => {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // Update user loyalty points
-      if (user) {
-        const loyaltyEarned = Math.floor(subtotal * 0.1); // 10% back
-        const newLoyaltyPoints = user.loyaltyPoints + loyaltyEarned - loyaltyDiscount;
-        const newTotalPurchases = user.totalPurchases + subtotal;
+      // If guest, create account using guest details before awarding loyalty
+      let accountUser = user;
+      if (!accountUser) {
+        const newUserData: any = {
+          id: `user-${Date.now()}`,
+          name: guestDetails.name,
+          phone: guestDetails.phone,
+          loyaltyPoints: 0,
+          totalPurchases: 0,
+          addresses: [{
+            id: `addr-${Date.now()}`,
+            name: guestDetails.name,
+            phone: guestDetails.phone,
+            address: guestDetails.address,
+            pinCode: savedPin?.pin || '',
+            isDefault: true
+          }]
+        };
+        updateUser(newUserData);
+        accountUser = getFromLocalStorage(LOCAL_STORAGE_KEYS.USER, null) as any;
+      }
+
+      // Update loyalty for the accountUser
+      if (accountUser) {
+        let loyaltyEarned = 0;
+        if (accountUser.totalPurchases === 0 && subtotal >= 300) {
+          loyaltyEarned = 100;
+        } else {
+          loyaltyEarned = Math.floor(subtotal * 0.1);
+        }
+        const newLoyaltyPoints = (accountUser.loyaltyPoints || 0) + loyaltyEarned - loyaltyDiscount;
+        const newTotalPurchases = (accountUser.totalPurchases || 0) + subtotal;
 
         updateUser({
           loyaltyPoints: newLoyaltyPoints,
@@ -68,17 +121,9 @@ const CheckoutPage: React.FC = () => {
         localStorage.setItem(LOCAL_STORAGE_KEYS.LAST_TIME_SLOT, selectedTimeSlot);
       }
 
-      clearCart();
-      toast.success('Order placed successfully!');
-      navigate('/order-success', {
-        state: {
-          orderId: `ECF${Date.now()}`,
-          deliveryDate: selectedDate,
-          timeSlot: selectedTimeSlot,
-          total,
-          loyaltyEarned: Math.floor(subtotal * 0.1)
-        }
-      });
+  clearCart();
+  toast.success('Order placed successfully!');
+  navigate('/');
     } catch (error) {
       toast.error('Failed to place order. Please try again.');
     } finally {
@@ -97,6 +142,54 @@ const CheckoutPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-orange-50">
       <div className="max-w-4xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-8">Checkout</h1>
+
+          {/* Guest Details (if not logged in) */}
+          {!user && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Your Details</h2>
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  placeholder="Name"
+                  value={guestDetails.name}
+                  onChange={e => setGuestDetails({ ...guestDetails, name: e.target.value })}
+                  className="w-full border rounded-lg p-3"
+                  required
+                />
+                <input
+                  type="tel"
+                  placeholder="Phone Number"
+                  value={guestDetails.phone}
+                  onChange={e => setGuestDetails({ ...guestDetails, phone: e.target.value })}
+                  className="w-full border rounded-lg p-3"
+                  required
+                />
+                <input
+                  type="text"
+                  placeholder="Address"
+                  value={guestDetails.address}
+                  onChange={e => setGuestDetails({ ...guestDetails, address: e.target.value })}
+                  className="w-full border rounded-lg p-3"
+                  required
+                />
+                <input
+                  type="text"
+                  placeholder="Landmark"
+                  value={guestDetails.landmark}
+                  onChange={e => setGuestDetails({ ...guestDetails, landmark: e.target.value })}
+                  className="w-full border rounded-lg p-3"
+                  required
+                />
+                <input
+                  type="tel"
+                  placeholder="Optional Phone Number"
+                  value={guestDetails.optionalPhone}
+                  onChange={e => setGuestDetails({ ...guestDetails, optionalPhone: e.target.value })}
+                  className="w-full border rounded-lg p-3"
+                />
+              </div>
+            </div>
+          )}
 
         <div className="lg:grid lg:grid-cols-3 lg:gap-8">
           {/* Checkout Form */}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Minus, ShoppingCart } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Product, ProductVariant } from '../../types';
 import { useCart } from '../../hooks/useCart';
 import toast from 'react-hot-toast';
@@ -47,25 +48,29 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, showQuickAdd = true 
       whileHover={{ y: -4 }}
       className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow"
     >
-      {/* Product Image */}
-      <div className="relative aspect-square bg-gray-50">
-        <img
-          src={product.image}
-          alt={product.name}
-          className="w-full h-full object-cover"
-        />
-        {!product.isAvailable && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <span className="text-white font-medium">Out of Stock</span>
-          </div>
-        )}
-      </div>
+      {/* Product Image with Link */}
+      <Link to={`/product/${product.id}`} className="block">
+        <div className="relative aspect-square bg-gray-50">
+          <img
+            src={product.image}
+            alt={product.name}
+            className="w-full h-full object-cover"
+          />
+          {!product.isAvailable && (
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+              <span className="text-white font-medium">Out of Stock</span>
+            </div>
+          )}
+        </div>
 
-      {/* Product Info */}
-      <div className="p-4">
-        <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2">{product.name}</h3>
-        <p className="text-sm text-gray-600 mb-3 line-clamp-2">{product.description}</p>
-
+        {/* Product Info */}
+        <div className="p-4 pb-0">
+          <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2">{product.name}</h3>
+          <p className="text-sm text-gray-600 mb-3 line-clamp-2">{product.description}</p>
+        </div>
+      </Link>
+      
+      <div className="p-4 pt-0">
         {/* Variant Selector */}
         <div className="flex flex-wrap gap-1 mb-3">
           {product.variants.map(variant => (
