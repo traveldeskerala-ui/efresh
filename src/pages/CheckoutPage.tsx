@@ -14,9 +14,11 @@ const CheckoutPage: React.FC = () => {
   const [guestDetails, setGuestDetails] = useState({
     name: '',
     phone: '',
+    pinCode: '',
     address: '',
     landmark: '',
-    optionalPhone: ''
+    optionalPhone: '',
+    email: ''
   });
   const { items, getTotalAmount, clearCart } = useCart();
   const { user, updateUser } = useAuth();
@@ -71,7 +73,7 @@ const CheckoutPage: React.FC = () => {
         toast.error('Landmark is required');
         return;
       }
-      if (!guestDetails.pinCode || !/^\d{6}$/.test(guestDetails.pinCode)) {
+      if (!guestDetails.pinCode || !/^\d{6}$/.test(guestDetails.pinCode.trim())) {
         toast.error('Valid PIN code is required');
         return;
       }
@@ -150,62 +152,77 @@ const CheckoutPage: React.FC = () => {
           {/* Guest Details (if not logged in) */}
           {!user && (
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Your Details</h2>
-              <div className="space-y-4">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Delivery Details</h2>
+              <p className="text-sm text-gray-600 mb-4">Please provide your details for delivery</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input
                   type="text"
-                  placeholder="Name"
+                  placeholder="Full Name *"
                   value={guestDetails.name}
                   onChange={e => setGuestDetails({ ...guestDetails, name: e.target.value })}
-                  className="w-full border rounded-lg p-3"
+                  className="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
                   required
                 />
                 <input
                   type="tel"
-                  placeholder="Phone Number"
+                  placeholder="Phone Number *"
                   value={guestDetails.phone}
                   onChange={e => setGuestDetails({ ...guestDetails, phone: e.target.value })}
-                  className="w-full border rounded-lg p-3"
+                  className="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
                   required
                 />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <input
                   type="text"
-                  placeholder="PIN Code"
+                  placeholder="PIN Code *"
                   value={guestDetails.pinCode || ''}
                   onChange={e => setGuestDetails({ ...guestDetails, pinCode: e.target.value })}
-                  className="w-full border rounded-lg p-3"
-                  required
-                />
-                <input
-                  type="text"
-                  placeholder="Address"
-                  value={guestDetails.address}
-                  onChange={e => setGuestDetails({ ...guestDetails, address: e.target.value })}
-                  className="w-full border rounded-lg p-3"
-                  required
-                />
-                <input
-                  type="text"
-                  placeholder="Landmark"
-                  value={guestDetails.landmark}
-                  onChange={e => setGuestDetails({ ...guestDetails, landmark: e.target.value })}
-                  className="w-full border rounded-lg p-3"
+                  className="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  maxLength={6}
                   required
                 />
                 <input
                   type="tel"
-                  placeholder="Optional Phone Number"
+                  placeholder="Additional Phone (Optional)"
                   value={guestDetails.optionalPhone}
                   onChange={e => setGuestDetails({ ...guestDetails, optionalPhone: e.target.value })}
-                  className="w-full border rounded-lg p-3"
+                  className="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
+              </div>
+              <div className="mt-4">
+                <input
+                  type="text"
+                  placeholder="Complete Address *"
+                  value={guestDetails.address}
+                  onChange={e => setGuestDetails({ ...guestDetails, address: e.target.value })}
+                  className="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  required
+                />
+              </div>
+              <div className="mt-4">
+                <input
+                  type="text"
+                  placeholder="Landmark *"
+                  value={guestDetails.landmark}
+                  onChange={e => setGuestDetails({ ...guestDetails, landmark: e.target.value })}
+                  className="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  required
+                />
+              </div>
+              <div className="mt-4">
                 <input
                   type="email"
-                  placeholder="Email (optional)"
+                  placeholder="Email (Optional)"
                   value={guestDetails.email || ''}
                   onChange={e => setGuestDetails({ ...guestDetails, email: e.target.value })}
-                  className="w-full border rounded-lg p-3"
+                  className="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
+              </div>
+              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-xl">
+                <p className="text-sm text-green-700">
+                  <strong>Note:</strong> Your details will be saved for future orders to make checkout faster.
+                </p>
               </div>
             </div>
           )}
