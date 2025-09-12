@@ -38,10 +38,11 @@ const Header: React.FC = () => {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">EC</span>
-              </div>
-              <span className="text-xl font-bold text-gray-900 hidden sm:block">ecfresh</span>
+              <img 
+                src="/WhatsApp_Image_2025-07-24_at_7.15.05_AM-removebg-preview.png" 
+                alt="ECFresh Logo" 
+                className="h-8 w-auto"
+              />
             </Link>
 
             {/* Search Bar - Desktop */}
