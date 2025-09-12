@@ -138,7 +138,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, showQuickAdd = true 
               Out of Stock
             </span>
           </div>
-        </div>
+        )}
       </div>
     </motion.div>
   );
