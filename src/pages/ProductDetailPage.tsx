@@ -16,7 +16,7 @@ const ProductDetailPage: React.FC = () => {
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('nutrition');
-  const [activeSection, setActiveSection] = useState<'related' | 'reviews'>('related');
+  const [activeSection, setActiveSection] = useState<'reviews'>('reviews');
   const [isLoading, setIsLoading] = useState(true);
   const { addToCart, items } = useCart();
   const { toggle: toggleWishlistGlobal, isWishlisted } = useWishlist();
@@ -351,14 +351,8 @@ const ProductDetailPage: React.FC = () => {
           <div className="mb-4">
             <div className="inline-flex bg-gray-100 rounded-xl p-1">
               <button
-                onClick={() => setActiveSection('related')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium ${activeSection === 'related' ? 'bg-white text-green-700 shadow-sm' : 'text-gray-600'}`}
-              >
-                Related Products
-              </button>
-              <button
                 onClick={() => setActiveSection('reviews')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium ${activeSection === 'reviews' ? 'bg-white text-green-700 shadow-sm' : 'text-gray-600'}`}
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-white text-green-700 shadow-sm"
               >
                 Customer Reviews
               </button>
@@ -374,19 +368,10 @@ const ProductDetailPage: React.FC = () => {
               transition={{ duration: 0.2 }}
               className="py-2"
             >
-              {activeSection === 'related' && (
-                <div className="bg-white rounded-lg">
-                  {/* Related Products section moved below already exists; show a short hint here if needed */}
-                  <p className="text-sm text-gray-600 mb-4">You might also like</p>
-                </div>
-              )}
-
-              {activeSection === 'reviews' && (
-                <div className="bg-white rounded-lg">
-                  <h3 className="text-lg font-medium text-gray-900 mb-3">Customer Reviews</h3>
-                  <p className="text-gray-600">Reviews coming soon.</p>
-                </div>
-              )}
+              <div className="bg-white rounded-lg">
+                <h3 className="text-lg font-medium text-gray-900 mb-3">Customer Reviews</h3>
+                <p className="text-gray-600">Reviews coming soon.</p>
+              </div>
             </motion.div>
           </AnimatePresence>
         </div>
