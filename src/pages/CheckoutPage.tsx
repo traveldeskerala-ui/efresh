@@ -14,11 +14,9 @@ const CheckoutPage: React.FC = () => {
   const [guestDetails, setGuestDetails] = useState({
     name: '',
     phone: '',
-    pinCode: '',
     address: '',
     landmark: '',
-    optionalPhone: '',
-    email: ''
+    optionalPhone: ''
   });
   const { items, getTotalAmount, clearCart } = useCart();
   const { user, updateUser } = useAuth();
@@ -33,7 +31,7 @@ const CheckoutPage: React.FC = () => {
   const availableSlots = getAvailableTimeSlots();
   
   const subtotal = getTotalAmount();
-  const deliveryFee = subtotal >= 500 ? 0 : 40;
+  const deliveryFee = subtotal >= 300 ? 0 : 40;
   const maxLoyaltyUse = user && user.loyaltyPoints >= 300 ? Math.min(user.loyaltyPoints, subtotal * 0.5) : 0;
   const loyaltyDiscount = useLoyaltyPoints ? maxLoyaltyUse : 0;
   const total = subtotal + deliveryFee - loyaltyDiscount;
@@ -71,6 +69,10 @@ const CheckoutPage: React.FC = () => {
       }
       if (!guestDetails.landmark.trim()) {
         toast.error('Landmark is required');
+        return;
+      }
+      if (!guestDetails.pinCode || !/^\d{6}$/.test(guestDetails.pinCode)) {
+        toast.error('Valid PIN code is required');
         return;
       }
     }
@@ -123,9 +125,9 @@ const CheckoutPage: React.FC = () => {
         localStorage.setItem(LOCAL_STORAGE_KEYS.LAST_TIME_SLOT, selectedTimeSlot);
       }
 
-  clearCart();
-  toast.success('Order placed successfully!');
-  navigate('/');
+      clearCart();
+      toast.success('Order placed successfully!');
+      navigate('/');
     } catch (error) {
       toast.error('Failed to place order. Please try again.');
     } finally {
@@ -168,6 +170,14 @@ const CheckoutPage: React.FC = () => {
                 />
                 <input
                   type="text"
+                  placeholder="PIN Code"
+                  value={guestDetails.pinCode || ''}
+                  onChange={e => setGuestDetails({ ...guestDetails, pinCode: e.target.value })}
+                  className="w-full border rounded-lg p-3"
+                  required
+                />
+                <input
+                  type="text"
                   placeholder="Address"
                   value={guestDetails.address}
                   onChange={e => setGuestDetails({ ...guestDetails, address: e.target.value })}
@@ -189,6 +199,13 @@ const CheckoutPage: React.FC = () => {
                   onChange={e => setGuestDetails({ ...guestDetails, optionalPhone: e.target.value })}
                   className="w-full border rounded-lg p-3"
                 />
+                <input
+                  type="email"
+                  placeholder="Email (optional)"
+                  value={guestDetails.email || ''}
+                  onChange={e => setGuestDetails({ ...guestDetails, email: e.target.value })}
+                  className="w-full border rounded-lg p-3"
+                />
               </div>
             </div>
           )}
@@ -202,9 +219,15 @@ const CheckoutPage: React.FC = () => {
                 <MapPin className="w-5 h-5 text-green-600" />
                 <h2 className="text-lg font-semibold text-gray-900">Delivery Area</h2>
               </div>
+              {deliveryFee > 0 && subtotal >= 99 && subtotal < 300 && (
+                <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-4">
+                  <p className="text-sm text-orange-700">
+                    Add ₹{300 - subtotal} more for free delivery!
+                  </p>
+                </div>
+              )}
               {savedPin && (
                 <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-                  <p className="font-medium text-green-900">{savedPin.area}</p>
                   <p className="text-sm text-green-700">{savedPin.region} - {savedPin.pin}</p>
                 </div>
               )}

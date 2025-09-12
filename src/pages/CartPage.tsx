@@ -121,9 +121,9 @@ const CheckoutPage: React.FC = () => {
         localStorage.setItem(LOCAL_STORAGE_KEYS.LAST_TIME_SLOT, selectedTimeSlot);
       }
 
-  clearCart();
-  toast.success('Order placed successfully!');
-  navigate('/');
+      clearCart();
+      toast.success('Order placed successfully!');
+      navigate('/');
     } catch (error) {
       toast.error('Failed to place order. Please try again.');
     } finally {
@@ -199,14 +199,25 @@ const CheckoutPage: React.FC = () => {
               <div className="flex items-center space-x-3 mb-4">
                 <MapPin className="w-5 h-5 text-green-600" />
                 <h2 className="text-lg font-semibold text-gray-900">Delivery Area</h2>
+              </div>
               {deliveryFee > 0 && subtotal >= 99 && subtotal < 300 && (
-              {savedPin && (
-                <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-4">
+                  <p className="text-sm text-orange-700">
                     Add ₹{300 - subtotal} more for free delivery!
-                  <p className="text-sm text-green-700">{savedPin.region} - {savedPin.pin}</p>
+                  </p>
+                </div>
+              {deliveryFee > 0 && subtotal >= 99 && subtotal < 300 && (
+                <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-4">
+                  <p className="text-sm text-orange-700">
+                    Add ₹{300 - subtotal} more for free delivery!
+                  </p>
                 </div>
               )}
-            </div>
+              {savedPin && (
+                <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                  <p className="font-medium text-green-900">{savedPin.area}</p>
+                </div>
+              )}
 
             {/* Delivery Schedule */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
