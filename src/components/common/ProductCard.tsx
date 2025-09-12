@@ -89,48 +89,55 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, showQuickAdd = true 
       </Link>
       
       <div className="p-4 pt-0">
-        {/* Price and Add to Cart */}
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center space-x-2">
-              <span className="font-bold text-lg text-gray-900">₹{selectedVariant.price}</span>
-              {selectedVariant.originalPrice && (
-                <span className="text-sm text-gray-500 line-through">₹{selectedVariant.originalPrice}</span>
-              )}
-            </div>
+        {/* Price */}
+        <div className="mb-3">
+          <div className="flex items-center space-x-2">
+            <span className="font-bold text-lg text-gray-900">₹{selectedVariant.price}</span>
+            {selectedVariant.originalPrice && (
+              <span className="text-sm text-gray-500 line-through">₹{selectedVariant.originalPrice}</span>
+            )}
           </div>
+        </div>
 
-          {showQuickAdd && product.isAvailable && (
-            <div className="flex items-center space-x-2">
-              {currentQuantity > 0 ? (
-                <div className="flex items-center bg-green-500 rounded-full">
-                  <button
-                    onClick={() => handleQuantityChange(currentQuantity - 1)}
-                    className="p-2 text-white hover:bg-green-600 rounded-full transition-colors"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </button>
-                  <span className="px-3 py-1 text-white font-medium min-w-[2rem] text-center">
-                    {currentQuantity}
-                  </span>
-                  <button
-                    onClick={() => handleQuantityChange(currentQuantity + 1)}
-                    className="p-2 text-white hover:bg-green-600 rounded-full transition-colors"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
+        {/* Add to Cart */}
+        {showQuickAdd && product.isAvailable && (
+          <div className="flex justify-center">
+            {currentQuantity > 0 ? (
+              <div className="flex items-center bg-green-500 rounded-full">
                 <button
-                  onClick={handleAddToCart}
-                  className="flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full transition-colors"
+                  onClick={() => handleQuantityChange(currentQuantity - 1)}
+                  className="p-2 text-white hover:bg-green-600 rounded-full transition-colors"
                 >
-                  <ShoppingCart className="w-4 h-4" />
-                  <span className="text-sm font-medium">Add</span>
+                  <Minus className="w-4 h-4" />
                 </button>
-              )}
-            </div>
-          )}
+                <span className="px-3 py-1 text-white font-medium min-w-[2rem] text-center">
+                  {currentQuantity}
+                </span>
+                <button
+                  onClick={() => handleQuantityChange(currentQuantity + 1)}
+                  className="p-2 text-white hover:bg-green-600 rounded-full transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleAddToCart}
+                className="flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full transition-colors"
+              >
+                <ShoppingCart className="w-4 h-4" />
+                <span className="text-sm font-medium">Add</span>
+              </button>
+            )}
+          </div>
+        )}
+
+        {!product.isAvailable && (
+          <div className="flex justify-center">
+            <span className="text-sm text-gray-500 bg-gray-100 px-4 py-2 rounded-full">
+              Out of Stock
+            </span>
+          </div>
         </div>
       </div>
     </motion.div>
