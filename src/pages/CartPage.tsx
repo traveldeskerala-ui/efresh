@@ -14,7 +14,7 @@ const CartPage: React.FC = () => {
 
   const savedPin = getFromLocalStorage(LOCAL_STORAGE_KEYS.USER_PIN, null);
   const subtotal = getTotalAmount();
-  const deliveryFee = subtotal >= 500 ? 0 : 40;
+  const deliveryFee = subtotal >= 300 ? 0 : 40;
   const total = subtotal + deliveryFee;
 
   const handleRemoveItem = async (productId: string, variantWeight: string) => {
@@ -183,10 +183,10 @@ const CartPage: React.FC = () => {
               )}
 
               {/* Delivery Info */}
-              {deliveryFee > 0 && subtotal >= 99 && (
+              {deliveryFee > 0 && subtotal >= 99 && subtotal < 300 && (
                 <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <p className="text-sm text-blue-700">
-                    Add ₹{500 - subtotal} more for free delivery!
+                    Add ₹{300 - subtotal} more for free delivery!
                   </p>
                 </div>
               )}

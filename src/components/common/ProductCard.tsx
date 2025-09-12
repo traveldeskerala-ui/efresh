@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Minus, ShoppingCart } from 'lucide-react';
+import { Plus, Minus, ShoppingCart, Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Product, ProductVariant } from '../../types';
 import { useCart } from '../../hooks/useCart';
+import { useWishlist } from '../../hooks/useWishlist';
 import toast from 'react-hot-toast';
 
 interface ProductCardProps {
@@ -15,6 +16,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, showQuickAdd = true 
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(product.variants[0]);
   const [quantity, setQuantity] = useState(0);
   const { addToCart, items } = useCart();
+  const { toggle: toggleWishlist, isWishlisted } = useWishlist();
 
   // Find if this product variant is already in cart
   const existingCartItem = items.find(
@@ -43,11 +45,28 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, showQuickAdd = true 
     }
   };
 
+  const handleWishlistToggle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleWishlist(product);
+    toast.success(isWishlisted(product.id) ? 'Removed from wishlist' : 'Added to wishlist');
+  };
+
   return (
     <motion.div
       whileHover={{ y: -4 }}
-      className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow"
+      className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow relative"
     >
+      {/* Wishlist Button */}
+      <button
+        onClick={handleWishlistToggle}
+        className="absolute top-3 right-3 z-10 bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-sm hover:bg-white transition-colors"
+      >
+        <Heart 
+          className={`w-4 h-4 ${isWishlisted(product.id) ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} 
+        />
+      </button>
+
       {/* Product Image with Link */}
       <Link to={`/product/${product.id}`} className="block">
         <div className="relative aspect-square bg-gray-50">
@@ -65,29 +84,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, showQuickAdd = true 
 
         {/* Product Info */}
         <div className="p-4 pb-0">
-          <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2">{product.name}</h3>
-          <p className="text-sm text-gray-600 mb-3 line-clamp-2">{product.description}</p>
+          <h3 className="font-semibold text-gray-900 mb-3 line-clamp-2">{product.name}</h3>
         </div>
       </Link>
       
       <div className="p-4 pt-0">
-        {/* Variant Selector */}
-        <div className="flex flex-wrap gap-1 mb-3">
-          {product.variants.map(variant => (
-            <button
-              key={variant.weight}
-              onClick={() => setSelectedVariant(variant)}
-              className={`px-3 py-1 rounded-full text-sm border transition-colors ${
-                selectedVariant.weight === variant.weight
-                  ? 'border-green-500 bg-green-50 text-green-700'
-                  : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300'
-              }`}
-            >
-              {variant.weight}
-            </button>
-          ))}
-        </div>
-
         {/* Price and Add to Cart */}
         <div className="flex items-center justify-between">
           <div>
