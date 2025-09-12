@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { User, MapPin, Package, LogOut } from 'lucide-react';
+import { User, Package } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { Link, useNavigate } from 'react-router-dom';
 import ProfileTab from './ProfileTab';
-import AddressesTab from './AddressesTab';
 import OrdersTab from './OrdersTab';
 
-type TabKey = 'profile' | 'addresses' | 'orders' | 'logout';
+type TabKey = 'profile' | 'orders';
 
 const AccountLayout: React.FC = () => {
   const { user, logout, isLoading } = useAuth();
@@ -20,7 +19,7 @@ const AccountLayout: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center max-w-md w-full">
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Welcome to your account</h2>
-          <p className="text-gray-600 mb-6">Please log in to view orders, addresses and profile settings.</p>
+          <p className="text-gray-600 mb-6">Please log in to view orders and profile settings.</p>
           <div className="flex items-center justify-center gap-3">
             <button
               onClick={() => navigate('/login')}
@@ -37,9 +36,7 @@ const AccountLayout: React.FC = () => {
 
   const tabs: { key: TabKey; label: string; icon: React.ElementType }[] = [
     { key: 'profile', label: 'Profile', icon: User },
-    { key: 'addresses', label: 'Addresses', icon: MapPin },
-    { key: 'orders', label: 'Orders', icon: Package },
-    { key: 'logout', label: 'Logout', icon: LogOut }
+    { key: 'orders', label: 'Orders', icon: Package }
   ];
 
   return (
@@ -47,11 +44,11 @@ const AccountLayout: React.FC = () => {
       <div className="max-w-5xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">My Account</h1>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 gap-4 mb-6">
           {tabs.map(({ key, label, icon: Icon }) => (
             <button
               key={key}
-              onClick={() => (key === 'logout' ? logout() : setActive(key))}
+              onClick={() => setActive(key)}
               className={`rounded-xl border text-left p-4 transition ${
                 active === key ? 'border-green-500 bg-white shadow' : 'border-gray-200 bg-white hover:border-green-300'
               }`}
@@ -65,7 +62,6 @@ const AccountLayout: React.FC = () => {
         </div>
 
         {active === 'profile' && <ProfileTab />}
-        {active === 'addresses' && <AddressesTab />}
         {active === 'orders' && <OrdersTab />}
       </div>
     </div>

@@ -48,6 +48,8 @@ export interface Address {
   phone: string;
   address: string;
   pinCode: string;
+  landmark?: string;
+  optionalPhone?: string;
   isDefault: boolean;
 }
 

@@ -7,15 +7,21 @@ const ProfileTab: React.FC = () => {
   const { user, updateUser } = useAuth();
   const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
+  const [pinCode, setPinCode] = useState('');
+  const [address, setAddress] = useState('');
+  const [landmark, setLandmark] = useState('');
+  const [optionalPhone, setOptionalPhone] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (user) {
       setName(user.name || '');
       setMobile(user.phone || '');
+      setPinCode(user.pinCode || '');
+      setAddress(user.addresses?.[0]?.address || '');
+      setLandmark(user.addresses?.[0]?.landmark || '');
+      setOptionalPhone(user.addresses?.[0]?.optionalPhone || '');
       setEmail(user.email || '');
     }
   }, [user]);
@@ -23,13 +29,30 @@ const ProfileTab: React.FC = () => {
   const onSave = () => {
     if (!name.trim()) return toast.error('Name is required');
     if (!/^\d{10}$/.test(mobile)) return toast.error('Enter a valid 10-digit mobile');
-    if (password || confirm) {
-      if (password.length < 6) return toast.error('Password must be 6+ chars');
-      if (password !== confirm) return toast.error('Passwords do not match');
-    }
+    if (pinCode && !/^\d{6}$/.test(pinCode)) return toast.error('Enter a valid 6-digit PIN code');
+    if (!address.trim()) return toast.error('Address is required');
+    if (!landmark.trim()) return toast.error('Landmark is required');
+    
     setSaving(true);
     try {
-      updateUser({ name, phone: mobile, email });
+      const updatedAddresses = [{
+        id: user?.addresses?.[0]?.id || `addr-${Date.now()}`,
+        name,
+        phone: mobile,
+        address,
+        pinCode,
+        landmark,
+        optionalPhone,
+        isDefault: true
+      }];
+      
+      updateUser({ 
+        name, 
+        phone: mobile, 
+        email, 
+        pinCode,
+        addresses: updatedAddresses
+      });
       toast.success('Profile saved');
     } finally {
       setSaving(false);
@@ -48,18 +71,24 @@ const ProfileTab: React.FC = () => {
           <input value={mobile} onChange={(e) => setMobile(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="10-digit" />
         </div>
         <div>
+          <label className="block text-sm text-gray-700 mb-1">PIN Code</label>
+          <input value={pinCode} onChange={(e) => setPinCode(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="6-digit PIN" />
+        </div>
+        <div>
+          <label className="block text-sm text-gray-700 mb-1">Address *</label>
+          <textarea value={address} onChange={(e) => setAddress(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500" rows={3} />
+        </div>
+        <div>
+          <label className="block text-sm text-gray-700 mb-1">Landmark *</label>
+          <input value={landmark} onChange={(e) => setLandmark(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500" />
+        </div>
+        <div>
+          <label className="block text-sm text-gray-700 mb-1">Additional Phone (optional)</label>
+          <input value={optionalPhone} onChange={(e) => setOptionalPhone(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="10-digit" />
+        </div>
+        <div>
           <label className="block text-sm text-gray-700 mb-1">Email (optional)</label>
           <input value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500" type="email" />
-        </div>
-        <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm text-gray-700 mb-1">New Password (optional)</label>
-            <input value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500" type="password" />
-          </div>
-          <div>
-            <label className="block text-sm text-gray-700 mb-1">Confirm Password</label>
-            <input value={confirm} onChange={(e) => setConfirm(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500" type="password" />
-          </div>
         </div>
         <div className="flex justify-end">
           <button onClick={onSave} disabled={saving} className="inline-flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-white px-5 py-2.5 rounded-xl font-medium">

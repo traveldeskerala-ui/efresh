@@ -14,9 +14,11 @@ const CheckoutPage: React.FC = () => {
   const [guestDetails, setGuestDetails] = useState({
     name: '',
     phone: '',
+    pinCode: '',
     address: '',
     landmark: '',
-    optionalPhone: ''
+    optionalPhone: '',
+    email: ''
   });
   const { items, getTotalAmount, clearCart } = useCart();
   const { user, updateUser } = useAuth();

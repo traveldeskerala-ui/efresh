@@ -14,7 +14,7 @@ const LoginPage: React.FC = () => {
 
   // Redirect if already logged in
   if (user) {
-    return <Navigate to={user.isAdmin ? '/dashboard' : '/'} replace />;
+    return <Navigate to={user.isAdmin ? '/admin' : '/'} replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,7 +33,7 @@ const LoginPage: React.FC = () => {
         toast.success('Login successful!');
         // Check if admin and redirect accordingly
         if (email === 'mail.ecfresh@gmail.com') {
-          navigate('/dashboard');
+          navigate('/admin');
         } else {
           navigate('/');
         }

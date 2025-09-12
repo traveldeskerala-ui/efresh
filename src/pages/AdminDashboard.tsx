@@ -15,12 +15,13 @@ import {
   Filter
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { sampleBanners, sampleCategories, sampleProducts } from '../data/sampleData';
 import { Banner, Category, Product } from '../types';
 
 const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [banners, setBanners] = useState(sampleBanners);
   const [categories, setCategories] = useState(sampleCategories);
@@ -409,7 +410,15 @@ const AdminDashboard: React.FC = () => {
       {/* Header */}
       <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+            <button
+              onClick={() => navigate('/')}
+              className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg border border-gray-200 hover:border-gray-300"
+            >
+              Back to Site
+            </button>
+          </div>
         </div>
       </div>
 

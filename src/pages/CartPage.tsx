@@ -1,148 +1,333 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Minus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { MapPin, Clock, CreditCard, CheckCircle, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
+import { getAvailableTimeSlots, formatTimeSlot, TimeSlot } from '../utils/timeSlots';
 import { LOCAL_STORAGE_KEYS, getFromLocalStorage } from '../utils/localStorage';
+import toast from 'react-hot-toast';
 
-const CartPage: React.FC = () => {
-  const { items, updateQuantity, removeFromCart, getTotalAmount, getTotalItems } = useCart();
-  const { user } = useAuth();
+const CheckoutPage: React.FC = () => {
+  // Guest checkout details
+  const [guestDetails, setGuestDetails] = useState({
+    name: '',
+    phone: '',
+    address: '',
+    landmark: '',
+    optionalPhone: ''
+  });
+  const { items, getTotalAmount, clearCart } = useCart();
+  const { user, updateUser } = useAuth();
   const navigate = useNavigate();
-  const [removingItems, setRemovingItems] = useState<Set<string>>(new Set());
+
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | ''>('');
+  const [useLoyaltyPoints, setUseLoyaltyPoints] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const savedPin = getFromLocalStorage(LOCAL_STORAGE_KEYS.USER_PIN, null);
+  const availableSlots = getAvailableTimeSlots();
+  
   const subtotal = getTotalAmount();
   const deliveryFee = subtotal >= 300 ? 0 : 40;
-  const total = subtotal + deliveryFee;
+  const maxLoyaltyUse = user && user.loyaltyPoints >= 300 ? Math.min(user.loyaltyPoints, subtotal * 0.5) : 0;
+  const loyaltyDiscount = useLoyaltyPoints ? maxLoyaltyUse : 0;
+  const total = subtotal + deliveryFee - loyaltyDiscount;
 
-  const handleRemoveItem = async (productId: string, variantWeight: string) => {
-    const itemKey = `${productId}-${variantWeight}`;
-    setRemovingItems(prev => new Set(prev).add(itemKey));
-    
-    setTimeout(() => {
-      const item = items.find(item => item.productId === productId && item.variant.weight === variantWeight);
-      if (item) {
-        removeFromCart(productId, item.variant);
+  useEffect(() => {
+    if (items.length === 0) {
+      navigate('/cart');
+      return;
+    }
+
+    if (!savedPin) {
+      toast.error('Please select your delivery area first');
+      navigate('/');
+      return;
+    }
+  }, [items.length, savedPin, navigate]);
+
+  const handlePlaceOrder = async () => {
+    if (!selectedDate || !selectedTimeSlot) {
+      toast.error('Please select delivery date and time slot');
+      return;
+    }
+    if (!user) {
+      if (!guestDetails.name.trim()) {
+        toast.error('Name is required');
+        return;
       }
-      setRemovingItems(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(itemKey);
-        return newSet;
-      });
-    }, 300);
+      if (!guestDetails.phone.trim()) {
+        toast.error('Phone number is required');
+        return;
+      }
+      if (!guestDetails.address.trim()) {
+        toast.error('Address is required');
+        return;
+      }
+      if (!guestDetails.landmark.trim()) {
+        toast.error('Landmark is required');
+        return;
+      }
+    }
+
+    setIsProcessing(true);
+
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // If guest, create account using guest details before awarding loyalty
+      let accountUser = user;
+      if (!accountUser) {
+        const newUserData: any = {
+          id: `user-${Date.now()}`,
+          name: guestDetails.name,
+          phone: guestDetails.phone,
+          loyaltyPoints: 0,
+          totalPurchases: 0,
+          addresses: [{
+            id: `addr-${Date.now()}`,
+            name: guestDetails.name,
+            phone: guestDetails.phone,
+            address: guestDetails.address,
+            pinCode: savedPin?.pin || '',
+            isDefault: true
+          }]
+        };
+        updateUser(newUserData);
+        accountUser = getFromLocalStorage(LOCAL_STORAGE_KEYS.USER, null) as any;
+      }
+
+      // Update loyalty for the accountUser
+      if (accountUser) {
+        let loyaltyEarned = 0;
+        if (accountUser.totalPurchases === 0 && subtotal >= 300) {
+          loyaltyEarned = 100;
+        } else {
+          loyaltyEarned = Math.floor(subtotal * 0.1);
+        }
+        const newLoyaltyPoints = (accountUser.loyaltyPoints || 0) + loyaltyEarned - loyaltyDiscount;
+        const newTotalPurchases = (accountUser.totalPurchases || 0) + subtotal;
+
+        updateUser({
+          loyaltyPoints: newLoyaltyPoints,
+          totalPurchases: newTotalPurchases
+        });
+
+        // Save last selected time slot
+        localStorage.setItem(LOCAL_STORAGE_KEYS.LAST_TIME_SLOT, selectedTimeSlot);
+      }
+
+  clearCart();
+  toast.success('Order placed successfully!');
+  navigate('/');
+    } catch (error) {
+      toast.error('Failed to place order. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  const canCheckout = savedPin && items.length > 0 && subtotal >= 99;
-
   if (items.length === 0) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-orange-50 flex items-center justify-center">
-        <div className="text-center p-8">
-          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <ShoppingBag className="w-12 h-12 text-gray-400" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Your cart is empty</h2>
-          <p className="text-gray-600 mb-6">Add some fresh produce to get started</p>
-          <Link
-            to="/shop"
-            className="inline-flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-medium transition-colors"
-          >
-            <span>Start Shopping</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-      </div>
-    );
+    return null;
   }
+
+  const availableDates = [...new Set(availableSlots.map(slot => slot.date))];
+  const availableTimeSlotsForDate = availableSlots.filter(slot => slot.date === selectedDate);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-orange-50">
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-8">Your Cart</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-8">Checkout</h1>
 
-        <div className="lg:grid lg:grid-cols-3 lg:gap-8">
-          {/* Cart Items */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="p-6 border-b border-gray-100">
-                <h2 className="font-semibold text-gray-900">
-                  {getTotalItems()} item{getTotalItems() !== 1 ? 's' : ''} in your cart
-                </h2>
-              </div>
-
-              <div className="divide-y divide-gray-100">
-                <AnimatePresence mode="popLayout">
-                  {items.map((item) => {
-                    const itemKey = `${item.productId}-${item.variant.weight}`;
-                    const isRemoving = removingItems.has(itemKey);
-
-                    return (
-                      <motion.div
-                        key={itemKey}
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: isRemoving ? 0 : 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="p-6"
-                      >
-                        <div className="flex items-center space-x-4">
-                          {/* Product Image */}
-                          <div className="flex-shrink-0">
-                            <img
-                              src={item.product.image}
-                              alt={item.product.name}
-                              className="w-16 h-16 object-cover rounded-xl bg-gray-50"
-                            />
-                          </div>
-
-                          {/* Product Info */}
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-gray-900 mb-1">{item.product.name}</h3>
-                            <p className="text-sm text-gray-600 mb-2">{item.variant.weight}</p>
-                            <div className="flex items-center space-x-2">
-                              <span className="font-semibold text-green-600">₹{item.variant.price}</span>
-                              {item.variant.originalPrice && (
-                                <span className="text-sm text-gray-500 line-through">₹{item.variant.originalPrice}</span>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Quantity Controls */}
-                          <div className="flex items-center space-x-3">
-                            <div className="flex items-center bg-gray-100 rounded-full">
-                              <button
-                                onClick={() => updateQuantity(item.productId, item.variant, item.quantity - 1)}
-                                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-full transition-colors"
-                              >
-                                <Minus className="w-4 h-4" />
-                              </button>
-                              <span className="px-4 py-2 font-medium min-w-[3rem] text-center">
-                                {item.quantity}
-                              </span>
-                              <button
-                                onClick={() => updateQuantity(item.productId, item.variant, item.quantity + 1)}
-                                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-full transition-colors"
-                              >
-                                <Plus className="w-4 h-4" />
-                              </button>
-                            </div>
-
-                            <button
-                              onClick={() => handleRemoveItem(item.productId, item.variant.weight)}
-                              className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </AnimatePresence>
+          {/* Guest Details (if not logged in) */}
+          {!user && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Your Details</h2>
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  placeholder="Name"
+                  value={guestDetails.name}
+                  onChange={e => setGuestDetails({ ...guestDetails, name: e.target.value })}
+                  className="w-full border rounded-lg p-3"
+                  required
+                />
+                <input
+                  type="tel"
+                  placeholder="Phone Number"
+                  value={guestDetails.phone}
+                  onChange={e => setGuestDetails({ ...guestDetails, phone: e.target.value })}
+                  className="w-full border rounded-lg p-3"
+                  required
+                />
+                <input
+                  type="text"
+                  placeholder="Address"
+                  value={guestDetails.address}
+                  onChange={e => setGuestDetails({ ...guestDetails, address: e.target.value })}
+                  className="w-full border rounded-lg p-3"
+                  required
+                />
+                <input
+                  type="text"
+                  placeholder="Landmark"
+                  value={guestDetails.landmark}
+                  onChange={e => setGuestDetails({ ...guestDetails, landmark: e.target.value })}
+                  className="w-full border rounded-lg p-3"
+                  required
+                />
+                <input
+                  type="tel"
+                  placeholder="Optional Phone Number"
+                  value={guestDetails.optionalPhone}
+                  onChange={e => setGuestDetails({ ...guestDetails, optionalPhone: e.target.value })}
+                  className="w-full border rounded-lg p-3"
+                />
               </div>
             </div>
+          )}
+
+        <div className="lg:grid lg:grid-cols-3 lg:gap-8">
+          {/* Checkout Form */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Delivery Area */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <MapPin className="w-5 h-5 text-green-600" />
+                <h2 className="text-lg font-semibold text-gray-900">Delivery Area</h2>
+              {deliveryFee > 0 && subtotal >= 99 && subtotal < 300 && (
+              {savedPin && (
+                <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                    Add ₹{300 - subtotal} more for free delivery!
+                  <p className="text-sm text-green-700">{savedPin.region} - {savedPin.pin}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Delivery Schedule */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <Clock className="w-5 h-5 text-green-600" />
+                <h2 className="text-lg font-semibold text-gray-900">Delivery Schedule</h2>
+              </div>
+
+              <p className="text-sm text-gray-600 mb-4">
+                We'll pack it fresh & fast. Choose your date & time.
+              </p>
+
+              {/* Date Selection */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Date
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {availableDates.map(date => (
+                    <button
+                      key={date}
+                      onClick={() => {
+                        setSelectedDate(date);
+                        setSelectedTimeSlot('');
+                      }}
+                      className={`p-3 border rounded-xl text-left transition-colors ${
+                        selectedDate === date
+                          ? 'border-green-500 bg-green-50 text-green-700'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="font-medium">
+                        {format(new Date(date), 'EEE, MMM d')}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {format(new Date(date), 'yyyy')}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Time Slot Selection */}
+              {selectedDate && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  className="space-y-2"
+                >
+                  <label className="block text-sm font-medium text-gray-700">
+                    Select Time Slot
+                  </label>
+                  {availableTimeSlotsForDate.map(slot => (
+                    <button
+                      key={slot.timeSlot}
+                      onClick={() => setSelectedTimeSlot(slot.timeSlot)}
+                      disabled={!slot.available}
+                      className={`w-full p-3 border rounded-xl text-left transition-colors ${
+                        !slot.available
+                          ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
+                          : selectedTimeSlot === slot.timeSlot
+                          ? 'border-green-500 bg-green-50 text-green-700'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">{formatTimeSlot(slot.timeSlot)}</span>
+                        {!slot.available && (
+                          <span className="text-xs text-red-500">Not available</span>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                  
+                  {availableTimeSlotsForDate.every(slot => !slot.available) && (
+                    <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <AlertCircle className="w-4 h-4 text-orange-600" />
+                        <p className="text-sm text-orange-700">
+                          No slots available for this date. Please select another date.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </div>
+
+            {/* Loyalty Points */}
+            {user && user.loyaltyPoints >= 300 && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium text-gray-900">Use Loyalty Credits</h3>
+                    <p className="text-sm text-gray-600">Available: ₹{user.loyaltyPoints}</p>
+                  </div>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={useLoyaltyPoints}
+                      onChange={(e) => setUseLoyaltyPoints(e.target.checked)}
+                      className="sr-only"
+                    />
+                    <div className={`relative inline-block w-12 h-6 rounded-full transition-colors ${
+                      useLoyaltyPoints ? 'bg-green-500' : 'bg-gray-300'
+                    }`}>
+                      <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                        useLoyaltyPoints ? 'translate-x-6' : 'translate-x-0'
+                      }`} />
+                    </div>
+                  </label>
+                </div>
+                {useLoyaltyPoints && (
+                  <div className="mt-3 p-3 bg-green-50 rounded-lg">
+                    <p className="text-sm text-green-700">
+                      You'll save ₹{loyaltyDiscount} on this order
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Order Summary */}
@@ -150,7 +335,19 @@ const CartPage: React.FC = () => {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-24">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h2>
 
-              <div className="space-y-3 mb-6">
+              {/* Items */}
+              <div className="space-y-3 mb-4">
+                {items.map(item => (
+                  <div key={`${item.productId}-${item.variant.weight}`} className="flex justify-between text-sm">
+                    <span className="text-gray-600">
+                      {item.product.name} ({item.variant.weight}) x {item.quantity}
+                    </span>
+                    <span className="font-medium">₹{item.variant.price * item.quantity}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-3 border-t pt-4 mb-6">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal</span>
                   <span className="font-medium">₹{subtotal}</span>
@@ -165,6 +362,12 @@ const CartPage: React.FC = () => {
                     )}
                   </span>
                 </div>
+                {loyaltyDiscount > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-green-600">Loyalty Discount</span>
+                    <span className="font-medium text-green-600">-₹{loyaltyDiscount}</span>
+                  </div>
+                )}
                 <div className="border-t pt-3">
                   <div className="flex justify-between font-semibold text-lg">
                     <span>Total</span>
@@ -173,52 +376,37 @@ const CartPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Minimum Order Notice */}
-              {subtotal < 99 && (
-                <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                  <p className="text-sm text-orange-700">
-                    Minimum order amount is ₹99. Add ₹{99 - subtotal} more to proceed.
-                  </p>
-                </div>
-              )}
-
-              {/* Delivery Info */}
-              {deliveryFee > 0 && subtotal >= 99 && subtotal < 300 && (
-                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm text-blue-700">
-                    Add ₹{300 - subtotal} more for free delivery!
-                  </p>
-                </div>
-              )}
-
-              {/* PIN Required Notice */}
-              {!savedPin && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-700">
-                    Please select your delivery area to proceed.
-                  </p>
-                </div>
-              )}
+              {/* Loyalty Earning Info */}
+              <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  You'll earn ₹{Math.floor(subtotal * 0.1)} in loyalty credits with this order!
+                </p>
+              </div>
 
               <button
-                onClick={() => navigate('/checkout')}
-                disabled={!canCheckout}
-                className={`w-full py-3 rounded-xl font-medium transition-colors ${
-                  canCheckout
+                onClick={handlePlaceOrder}
+                disabled={!selectedDate || !selectedTimeSlot || isProcessing}
+                className={`w-full py-3 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2 ${
+                  selectedDate && selectedTimeSlot && !isProcessing
                     ? 'bg-green-500 hover:bg-green-600 text-white'
                     : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                 }`}
               >
-                {!savedPin ? 'Select Area First' : 'Proceed to Checkout'}
+                {isProcessing ? (
+                  <>
+                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                    <span>Processing...</span>
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="w-4 h-4" />
+                    <span>Place Order</span>
+                  </>
+                )}
               </button>
 
-              <div className="mt-4 text-center">
-                <Link
-                  to="/shop"
-                  className="text-sm text-green-600 hover:text-green-700 font-medium"
-                >
-                  Continue Shopping
-                </Link>
+              <div className="mt-4 text-xs text-gray-500 text-center">
+                By placing this order, you agree to our terms and conditions
               </div>
             </div>
           </div>
@@ -231,4 +419,4 @@ const CartPage: React.FC = () => {
   );
 };
 
-export default CartPage;
+export default CheckoutPage;
