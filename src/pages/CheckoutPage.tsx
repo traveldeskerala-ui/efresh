@@ -28,6 +28,22 @@ const CheckoutPage: React.FC = () => {
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | ''>('');
   const [useLoyaltyPoints, setUseLoyaltyPoints] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Initialize guest details with user data if available
+  useEffect(() => {
+    if (user) {
+      const defaultAddress = user.addresses?.[0];
+      setGuestDetails({
+        name: user.name || '',
+        phone: user.phone || '',
+        pinCode: user.pinCode || defaultAddress?.pinCode || '',
+        address: defaultAddress?.address || '',
+        landmark: defaultAddress?.landmark || '',
+        optionalPhone: defaultAddress?.optionalPhone || '',
+        email: user.email || ''
+      });
+    }
+  }, [user]);
 
   const savedPin = getFromLocalStorage(LOCAL_STORAGE_KEYS.USER_PIN, null);
   const availableSlots = getAvailableTimeSlots();
@@ -56,27 +72,27 @@ const CheckoutPage: React.FC = () => {
       toast.error('Please select delivery date and time slot');
       return;
     }
-    if (!user) {
-      if (!guestDetails.name.trim()) {
-        toast.error('Name is required');
-        return;
-      }
-      if (!guestDetails.phone.trim()) {
-        toast.error('Phone number is required');
-        return;
-      }
-      if (!guestDetails.address.trim()) {
-        toast.error('Address is required');
-        return;
-      }
-      if (!guestDetails.landmark.trim()) {
-        toast.error('Landmark is required');
-        return;
-      }
-      if (!guestDetails.pinCode || !/^\d{6}$/.test(guestDetails.pinCode.trim())) {
-        toast.error('Valid PIN code is required');
-        return;
-      }
+    
+    // Validate delivery details for all users
+    if (!guestDetails.name.trim()) {
+      toast.error('Name is required');
+      return;
+    }
+    if (!guestDetails.phone.trim()) {
+      toast.error('Phone number is required');
+      return;
+    }
+    if (!guestDetails.address.trim()) {
+      toast.error('Address is required');
+      return;
+    }
+    if (!guestDetails.landmark.trim()) {
+      toast.error('Landmark is required');
+      return;
+    }
+    if (!guestDetails.pinCode || !/^\d{6}$/.test(guestDetails.pinCode.trim())) {
+      toast.error('Valid PIN code is required');
+      return;
     }
 
     setIsProcessing(true);
@@ -149,83 +165,83 @@ const CheckoutPage: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-8">Checkout</h1>
 
-          {/* Guest Details (if not logged in) */}
-          {!user && (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Delivery Details</h2>
-              <p className="text-sm text-gray-600 mb-4">Please provide your details for delivery</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input
-                  type="text"
-                  placeholder="Full Name *"
-                  value={guestDetails.name}
-                  onChange={e => setGuestDetails({ ...guestDetails, name: e.target.value })}
-                  className="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
-                  required
-                />
-                <input
-                  type="tel"
-                  placeholder="Phone Number *"
-                  value={guestDetails.phone}
-                  onChange={e => setGuestDetails({ ...guestDetails, phone: e.target.value })}
-                  className="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                <input
-                  type="text"
-                  placeholder="PIN Code *"
-                  value={guestDetails.pinCode || ''}
-                  onChange={e => setGuestDetails({ ...guestDetails, pinCode: e.target.value })}
-                  className="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
-                  maxLength={6}
-                  required
-                />
-                <input
-                  type="tel"
-                  placeholder="Additional Phone (Optional)"
-                  value={guestDetails.optionalPhone}
-                  onChange={e => setGuestDetails({ ...guestDetails, optionalPhone: e.target.value })}
-                  className="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-              </div>
-              <div className="mt-4">
-                <input
-                  type="text"
-                  placeholder="Complete Address *"
-                  value={guestDetails.address}
-                  onChange={e => setGuestDetails({ ...guestDetails, address: e.target.value })}
-                  className="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
-                  required
-                />
-              </div>
-              <div className="mt-4">
-                <input
-                  type="text"
-                  placeholder="Landmark *"
-                  value={guestDetails.landmark}
-                  onChange={e => setGuestDetails({ ...guestDetails, landmark: e.target.value })}
-                  className="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
-                  required
-                />
-              </div>
-              <div className="mt-4">
-                <input
-                  type="email"
-                  placeholder="Email (Optional)"
-                  value={guestDetails.email || ''}
-                  onChange={e => setGuestDetails({ ...guestDetails, email: e.target.value })}
-                  className="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-              </div>
-              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-xl">
-                <p className="text-sm text-green-700">
-                  <strong>Note:</strong> Your details will be saved for future orders to make checkout faster.
-                </p>
-              </div>
-            </div>
-          )}
+        {/* Delivery Details - Always shown */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Delivery Details</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            {user ? 'Confirm or update your delivery details' : 'Please provide your details for delivery'}
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input
+              type="text"
+              placeholder="Full Name *"
+              value={guestDetails.name}
+              onChange={e => setGuestDetails({ ...guestDetails, name: e.target.value })}
+              className="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
+              required
+            />
+            <input
+              type="tel"
+              placeholder="Phone Number *"
+              value={guestDetails.phone}
+              onChange={e => setGuestDetails({ ...guestDetails, phone: e.target.value })}
+              className="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
+              required
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <input
+              type="text"
+              placeholder="PIN Code *"
+              value={guestDetails.pinCode || ''}
+              onChange={e => setGuestDetails({ ...guestDetails, pinCode: e.target.value })}
+              className="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
+              maxLength={6}
+              required
+            />
+            <input
+              type="tel"
+              placeholder="Additional Phone (Optional)"
+              value={guestDetails.optionalPhone}
+              onChange={e => setGuestDetails({ ...guestDetails, optionalPhone: e.target.value })}
+              className="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+          </div>
+          <div className="mt-4">
+            <input
+              type="text"
+              placeholder="Complete Address *"
+              value={guestDetails.address}
+              onChange={e => setGuestDetails({ ...guestDetails, address: e.target.value })}
+              className="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
+              required
+            />
+          </div>
+          <div className="mt-4">
+            <input
+              type="text"
+              placeholder="Landmark *"
+              value={guestDetails.landmark}
+              onChange={e => setGuestDetails({ ...guestDetails, landmark: e.target.value })}
+              className="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
+              required
+            />
+          </div>
+          <div className="mt-4">
+            <input
+              type="email"
+              placeholder="Email (Optional)"
+              value={guestDetails.email || ''}
+              onChange={e => setGuestDetails({ ...guestDetails, email: e.target.value })}
+              className="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+          </div>
+          <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-xl">
+            <p className="text-sm text-green-700">
+              <strong>Note:</strong> {user ? 'Any changes will be saved to your profile.' : 'Your details will be saved for future orders to make checkout faster.'}
+            </p>
+          </div>
+        </div>
 
         <div className="lg:grid lg:grid-cols-3 lg:gap-8">
           {/* Checkout Form */}
@@ -249,6 +265,7 @@ const CheckoutPage: React.FC = () => {
                 </div>
               )}
             </div>
+
 
             {/* Delivery Schedule */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
