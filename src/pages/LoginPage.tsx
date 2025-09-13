@@ -57,10 +57,11 @@ const LoginPage: React.FC = () => {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center space-x-2 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center">
-              <Leaf className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-3xl font-bold text-gray-900">ecfresh</span>
+            <img 
+              src="/WhatsApp_Image_2025-07-24_at_7.15.05_AM-removebg-preview.png" 
+              alt="ECFresh Logo" 
+              className="h-12 w-auto"
+            />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome back</h1>
           <p className="text-gray-600">Sign in to your account</p>

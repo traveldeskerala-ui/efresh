@@ -14,9 +14,11 @@ const CheckoutPage: React.FC = () => {
   const [guestDetails, setGuestDetails] = useState({
     name: '',
     phone: '',
+    pinCode: '',
     address: '',
     landmark: '',
-    optionalPhone: ''
+    optionalPhone: '',
+    email: ''
   });
   const { items, getTotalAmount, clearCart } = useCart();
   const { user, updateUser } = useAuth();
@@ -26,6 +28,22 @@ const CheckoutPage: React.FC = () => {
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | ''>('');
   const [useLoyaltyPoints, setUseLoyaltyPoints] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Initialize guest details with user data if available
+  useEffect(() => {
+    if (user) {
+      const defaultAddress = user.addresses?.[0];
+      setGuestDetails({
+        name: user.name || '',
+        phone: user.phone || '',
+        pinCode: user.pinCode || defaultAddress?.pinCode || '',
+        address: defaultAddress?.address || '',
+        landmark: defaultAddress?.landmark || '',
+        optionalPhone: defaultAddress?.optionalPhone || '',
+        email: user.email || ''
+      });
+    }
+  }, [user]);
 
   const savedPin = getFromLocalStorage(LOCAL_STORAGE_KEYS.USER_PIN, null);
   const availableSlots = getAvailableTimeSlots();
@@ -54,27 +72,27 @@ const CheckoutPage: React.FC = () => {
       toast.error('Please select delivery date and time slot');
       return;
     }
-    if (!user) {
-      if (!guestDetails.name.trim()) {
-        toast.error('Name is required');
-        return;
-      }
-      if (!guestDetails.phone.trim()) {
-        toast.error('Phone number is required');
-        return;
-      }
-      if (!guestDetails.address.trim()) {
-        toast.error('Address is required');
-        return;
-      }
-      if (!guestDetails.landmark.trim()) {
-        toast.error('Landmark is required');
-        return;
-      }
-      if (!guestDetails.pinCode || !/^\d{6}$/.test(guestDetails.pinCode)) {
-        toast.error('Valid PIN code is required');
-        return;
-      }
+    
+    // Validate delivery details for all users
+    if (!guestDetails.name.trim()) {
+      toast.error('Name is required');
+      return;
+    }
+    if (!guestDetails.phone.trim()) {
+      toast.error('Phone number is required');
+      return;
+    }
+    if (!guestDetails.address.trim()) {
+      toast.error('Address is required');
+      return;
+    }
+    if (!guestDetails.landmark.trim()) {
+      toast.error('Landmark is required');
+      return;
+    }
+    if (!guestDetails.pinCode || !/^\d{6}$/.test(guestDetails.pinCode.trim())) {
+      toast.error('Valid PIN code is required');
+      return;
     }
 
     setIsProcessing(true);
@@ -83,13 +101,44 @@ const CheckoutPage: React.FC = () => {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 2000));
 
+      // Create order object
+      const newOrder = {
+        id: `ORD-${Date.now()}`,
+        userId: user?.id || `guest-${Date.now()}`,
+        items: items,
+        total: total,
+        deliveryFee: deliveryFee,
+        loyaltyUsed: loyaltyDiscount,
+        deliveryDate: selectedDate,
+        timeSlot: selectedTimeSlot,
+        address: {
+          id: `addr-${Date.now()}`,
+          name: guestDetails.name,
+          phone: guestDetails.phone,
+          address: guestDetails.address,
+          pinCode: guestDetails.pinCode,
+          landmark: guestDetails.landmark,
+          optionalPhone: guestDetails.optionalPhone,
+          isDefault: true
+        },
+        status: 'confirmed' as const,
+        createdAt: new Date().toISOString()
+      };
+
+      // Save order to localStorage
+      const existingOrders = getFromLocalStorage(LOCAL_STORAGE_KEYS.ORDERS, []);
+      const updatedOrders = [newOrder, ...existingOrders];
+      localStorage.setItem(LOCAL_STORAGE_KEYS.ORDERS, JSON.stringify(updatedOrders));
+
       // If guest, create account using guest details before awarding loyalty
       let accountUser = user;
       if (!accountUser) {
         const newUserData: any = {
           id: `user-${Date.now()}`,
+          email: guestDetails.email || `${guestDetails.phone}@guest.local`,
           name: guestDetails.name,
           phone: guestDetails.phone,
+          pinCode: guestDetails.pinCode,
           loyaltyPoints: 0,
           totalPurchases: 0,
           addresses: [{
@@ -97,13 +146,37 @@ const CheckoutPage: React.FC = () => {
             name: guestDetails.name,
             phone: guestDetails.phone,
             address: guestDetails.address,
-            pinCode: savedPin?.pin || '',
+            pinCode: guestDetails.pinCode,
+            landmark: guestDetails.landmark,
+            optionalPhone: guestDetails.optionalPhone,
             isDefault: true
           }]
         };
         updateUser(newUserData);
-        accountUser = getFromLocalStorage(LOCAL_STORAGE_KEYS.USER, null) as any;
+      } else {
+        // Update existing user's profile with checkout details
+        const updatedAddresses = [{
+          id: user.addresses?.[0]?.id || `addr-${Date.now()}`,
+          name: guestDetails.name,
+          phone: guestDetails.phone,
+          address: guestDetails.address,
+          pinCode: guestDetails.pinCode,
+          landmark: guestDetails.landmark,
+          optionalPhone: guestDetails.optionalPhone,
+          isDefault: true
+        }];
+        
+        updateUser({
+          name: guestDetails.name,
+          phone: guestDetails.phone,
+          email: guestDetails.email || user.email,
+          pinCode: guestDetails.pinCode,
+          addresses: updatedAddresses
+        });
       }
+
+      // Get updated user data
+      accountUser = getFromLocalStorage(LOCAL_STORAGE_KEYS.USER, null) as any;
 
       // Update loyalty for the accountUser
       if (accountUser) {
@@ -147,68 +220,83 @@ const CheckoutPage: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-8">Checkout</h1>
 
-          {/* Guest Details (if not logged in) */}
-          {!user && (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Your Details</h2>
-              <div className="space-y-4">
-                <input
-                  type="text"
-                  placeholder="Name"
-                  value={guestDetails.name}
-                  onChange={e => setGuestDetails({ ...guestDetails, name: e.target.value })}
-                  className="w-full border rounded-lg p-3"
-                  required
-                />
-                <input
-                  type="tel"
-                  placeholder="Phone Number"
-                  value={guestDetails.phone}
-                  onChange={e => setGuestDetails({ ...guestDetails, phone: e.target.value })}
-                  className="w-full border rounded-lg p-3"
-                  required
-                />
-                <input
-                  type="text"
-                  placeholder="PIN Code"
-                  value={guestDetails.pinCode || ''}
-                  onChange={e => setGuestDetails({ ...guestDetails, pinCode: e.target.value })}
-                  className="w-full border rounded-lg p-3"
-                  required
-                />
-                <input
-                  type="text"
-                  placeholder="Address"
-                  value={guestDetails.address}
-                  onChange={e => setGuestDetails({ ...guestDetails, address: e.target.value })}
-                  className="w-full border rounded-lg p-3"
-                  required
-                />
-                <input
-                  type="text"
-                  placeholder="Landmark"
-                  value={guestDetails.landmark}
-                  onChange={e => setGuestDetails({ ...guestDetails, landmark: e.target.value })}
-                  className="w-full border rounded-lg p-3"
-                  required
-                />
-                <input
-                  type="tel"
-                  placeholder="Optional Phone Number"
-                  value={guestDetails.optionalPhone}
-                  onChange={e => setGuestDetails({ ...guestDetails, optionalPhone: e.target.value })}
-                  className="w-full border rounded-lg p-3"
-                />
-                <input
-                  type="email"
-                  placeholder="Email (optional)"
-                  value={guestDetails.email || ''}
-                  onChange={e => setGuestDetails({ ...guestDetails, email: e.target.value })}
-                  className="w-full border rounded-lg p-3"
-                />
-              </div>
-            </div>
-          )}
+        {/* Delivery Details - Always shown */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Delivery Details</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            {user ? 'Confirm or update your delivery details' : 'Please provide your details for delivery'}
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input
+              type="text"
+              placeholder="Full Name *"
+              value={guestDetails.name}
+              onChange={e => setGuestDetails({ ...guestDetails, name: e.target.value })}
+              className="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
+              required
+            />
+            <input
+              type="tel"
+              placeholder="Phone Number *"
+              value={guestDetails.phone}
+              onChange={e => setGuestDetails({ ...guestDetails, phone: e.target.value })}
+              className="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
+              required
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <input
+              type="text"
+              placeholder="PIN Code *"
+              value={guestDetails.pinCode || ''}
+              onChange={e => setGuestDetails({ ...guestDetails, pinCode: e.target.value })}
+              className="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
+              maxLength={6}
+              required
+            />
+            <input
+              type="tel"
+              placeholder="Additional Phone (Optional)"
+              value={guestDetails.optionalPhone}
+              onChange={e => setGuestDetails({ ...guestDetails, optionalPhone: e.target.value })}
+              className="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+          </div>
+          <div className="mt-4">
+            <input
+              type="text"
+              placeholder="Complete Address *"
+              value={guestDetails.address}
+              onChange={e => setGuestDetails({ ...guestDetails, address: e.target.value })}
+              className="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
+              required
+            />
+          </div>
+          <div className="mt-4">
+            <input
+              type="text"
+              placeholder="Landmark *"
+              value={guestDetails.landmark}
+              onChange={e => setGuestDetails({ ...guestDetails, landmark: e.target.value })}
+              className="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
+              required
+            />
+          </div>
+          <div className="mt-4">
+            <input
+              type="email"
+              placeholder="Email (Optional)"
+              value={guestDetails.email || ''}
+              onChange={e => setGuestDetails({ ...guestDetails, email: e.target.value })}
+              className="w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+          </div>
+          <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-xl">
+            <p className="text-sm text-green-700">
+              <strong>Note:</strong> {user ? 'Any changes will be saved to your profile.' : 'Your details will be saved for future orders to make checkout faster.'}
+            </p>
+          </div>
+        </div>
 
         <div className="lg:grid lg:grid-cols-3 lg:gap-8">
           {/* Checkout Form */}
@@ -232,6 +320,7 @@ const CheckoutPage: React.FC = () => {
                 </div>
               )}
             </div>
+
 
             {/* Delivery Schedule */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
