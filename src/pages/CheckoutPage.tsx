@@ -101,13 +101,44 @@ const CheckoutPage: React.FC = () => {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 2000));
 
+      // Create order object
+      const newOrder = {
+        id: `ORD-${Date.now()}`,
+        userId: user?.id || `guest-${Date.now()}`,
+        items: items,
+        total: total,
+        deliveryFee: deliveryFee,
+        loyaltyUsed: loyaltyDiscount,
+        deliveryDate: selectedDate,
+        timeSlot: selectedTimeSlot,
+        address: {
+          id: `addr-${Date.now()}`,
+          name: guestDetails.name,
+          phone: guestDetails.phone,
+          address: guestDetails.address,
+          pinCode: guestDetails.pinCode,
+          landmark: guestDetails.landmark,
+          optionalPhone: guestDetails.optionalPhone,
+          isDefault: true
+        },
+        status: 'confirmed' as const,
+        createdAt: new Date().toISOString()
+      };
+
+      // Save order to localStorage
+      const existingOrders = getFromLocalStorage(LOCAL_STORAGE_KEYS.ORDERS, []);
+      const updatedOrders = [newOrder, ...existingOrders];
+      localStorage.setItem(LOCAL_STORAGE_KEYS.ORDERS, JSON.stringify(updatedOrders));
+
       // If guest, create account using guest details before awarding loyalty
       let accountUser = user;
       if (!accountUser) {
         const newUserData: any = {
           id: `user-${Date.now()}`,
+          email: guestDetails.email || `${guestDetails.phone}@guest.local`,
           name: guestDetails.name,
           phone: guestDetails.phone,
+          pinCode: guestDetails.pinCode,
           loyaltyPoints: 0,
           totalPurchases: 0,
           addresses: [{
@@ -115,13 +146,37 @@ const CheckoutPage: React.FC = () => {
             name: guestDetails.name,
             phone: guestDetails.phone,
             address: guestDetails.address,
-            pinCode: savedPin?.pin || '',
+            pinCode: guestDetails.pinCode,
+            landmark: guestDetails.landmark,
+            optionalPhone: guestDetails.optionalPhone,
             isDefault: true
           }]
         };
         updateUser(newUserData);
-        accountUser = getFromLocalStorage(LOCAL_STORAGE_KEYS.USER, null) as any;
+      } else {
+        // Update existing user's profile with checkout details
+        const updatedAddresses = [{
+          id: user.addresses?.[0]?.id || `addr-${Date.now()}`,
+          name: guestDetails.name,
+          phone: guestDetails.phone,
+          address: guestDetails.address,
+          pinCode: guestDetails.pinCode,
+          landmark: guestDetails.landmark,
+          optionalPhone: guestDetails.optionalPhone,
+          isDefault: true
+        }];
+        
+        updateUser({
+          name: guestDetails.name,
+          phone: guestDetails.phone,
+          email: guestDetails.email || user.email,
+          pinCode: guestDetails.pinCode,
+          addresses: updatedAddresses
+        });
       }
+
+      // Get updated user data
+      accountUser = getFromLocalStorage(LOCAL_STORAGE_KEYS.USER, null) as any;
 
       // Update loyalty for the accountUser
       if (accountUser) {
