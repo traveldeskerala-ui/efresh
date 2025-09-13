@@ -19,9 +19,10 @@ const ProfileTab: React.FC = () => {
       setName(user.name || '');
       setMobile(user.phone || '');
       setPinCode(user.pinCode || '');
-      setAddress(user.addresses?.[0]?.address || '');
-      setLandmark(user.addresses?.[0]?.landmark || '');
-      setOptionalPhone(user.addresses?.[0]?.optionalPhone || '');
+      const defaultAddress = user.addresses?.find(addr => addr.isDefault) || user.addresses?.[0];
+      setAddress(defaultAddress?.address || '');
+      setLandmark(defaultAddress?.landmark || '');
+      setOptionalPhone(defaultAddress?.optionalPhone || '');
       setEmail(user.email || '');
     }
   }, [user]);

@@ -153,6 +153,7 @@ const CheckoutPage: React.FC = () => {
           }]
         };
         updateUser(newUserData);
+        accountUser = newUserData;
       } else {
         // Update existing user's profile with checkout details
         const updatedAddresses = [{
@@ -166,17 +167,16 @@ const CheckoutPage: React.FC = () => {
           isDefault: true
         }];
         
-        updateUser({
+        const updatedUserData = {
           name: guestDetails.name,
           phone: guestDetails.phone,
           email: guestDetails.email || user.email,
           pinCode: guestDetails.pinCode,
           addresses: updatedAddresses
-        });
+        };
+        updateUser(updatedUserData);
+        accountUser = { ...user, ...updatedUserData };
       }
-
-      // Get updated user data
-      accountUser = getFromLocalStorage(LOCAL_STORAGE_KEYS.USER, null) as any;
 
       // Update loyalty for the accountUser
       if (accountUser) {
@@ -190,6 +190,7 @@ const CheckoutPage: React.FC = () => {
         const newTotalPurchases = (accountUser.totalPurchases || 0) + subtotal;
 
         updateUser({
+          ...accountUser,
           loyaltyPoints: newLoyaltyPoints,
           totalPurchases: newTotalPurchases
         });

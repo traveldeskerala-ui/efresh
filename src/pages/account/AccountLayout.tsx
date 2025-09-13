@@ -42,7 +42,10 @@ const AccountLayout: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-orange-50">
       <div className="max-w-5xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">My Account</h1>
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">My Account</h1>
+          <p className="text-gray-600">Welcome back, {user.name || 'User'}!</p>
+        </div>
 
         <div className="grid grid-cols-2 gap-4 mb-6">
           {tabs.map(({ key, label, icon: Icon }) => (
