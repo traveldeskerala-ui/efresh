@@ -104,7 +104,7 @@ const Header: React.FC = () => {
                     to="/account"
                     className="text-sm font-medium text-gray-900 hover:text-green-600 transition-colors"
                   >
-                    {user.name}
+                    {user.name || 'Account'}
                   </Link>
                 ) : (
                   <Link
